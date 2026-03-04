@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | SmartWash Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <style>
+        body { background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 40%, #2563EB 100%); min-height: 100vh; display:flex; align-items:center; justify-content:center; font-family:'Inter',sans-serif; }
+        .login-wrapper { display:flex; width:900px; max-width:95vw; border-radius:20px; overflow:hidden; box-shadow: 0 25px 80px rgba(0,0,0,0.4); }
+        .login-left { flex:1; background: linear-gradient(160deg, #2563EB, #1E40AF); padding:50px 40px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; }
+        .login-right { flex:1; background:#fff; padding:50px 40px; display:flex; flex-direction:column; justify-content:center; }
+        .brand-logo { width:80px; height:80px; background:rgba(255,255,255,0.15); border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:36px; color:#fff; margin:0 auto 20px; }
+        .brand-title { color:#fff; font-size:28px; font-weight:800; margin-bottom:8px; }
+        .brand-subtitle { color:rgba(255,255,255,0.7); font-size:14px; line-height:1.6; }
+        .features-list { margin-top:30px; text-align:left; width:100%; }
+        .feature-item { display:flex; align-items:center; gap:12px; color:rgba(255,255,255,0.85); font-size:13px; margin-bottom:14px; }
+        .feature-item i { width:32px; height:32px; background:rgba(255,255,255,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; color:#fff; flex-shrink:0; }
+        .login-title { font-size:26px; font-weight:700; color:#1E293B; margin-bottom:8px; }
+        .login-subtitle { color:#64748B; font-size:14px; margin-bottom:30px; }
+        .form-group { margin-bottom:20px; }
+        .form-label { display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:8px; }
+        .input-field { width:100%; padding:13px 16px 13px 44px; border:2px solid #E2E8F0; border-radius:12px; font-size:14px; font-family:'Inter',sans-serif; outline:none; transition:all 0.3s; box-sizing:border-box; background:#F8FAFC; }
+        .input-field:focus { border-color:#2563EB; background:#fff; box-shadow:0 0 0 4px rgba(37,99,235,0.08); }
+        .input-wrapper { position:relative; }
+        .input-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#94A3B8; font-size:16px; }
+        .input-toggle { position:absolute; right:14px; top:50%; transform:translateY(-50%); color:#94A3B8; cursor:pointer; background:none; border:none; font-size:16px; }
+        .btn-login { width:100%; padding:14px; background:linear-gradient(135deg, #2563EB, #1E40AF); color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; transition:all 0.3s; font-family:'Inter',sans-serif; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .btn-login:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(37,99,235,0.35); }
+        .alert { padding:12px 16px; border-radius:10px; margin-bottom:20px; font-size:13px; display:flex; align-items:center; gap:8px; }
+        .alert-danger { background:#FEF2F2; border:1px solid #FCA5A5; color:#DC2626; }
+        .alert-success { background:#F0FDF4; border:1px solid #86EFAC; color:#16A34A; }
+        .credentials-hint { margin-top:20px; padding:14px; background:#F0F7FF; border-radius:10px; border-left:4px solid #2563EB; font-size:12px; color:#3B82F6; }
+        @media(max-width:640px){ .login-left{display:none;} .login-wrapper{width:100%;border-radius:0;min-height:100vh;} }
+    </style>
+</head>
+<body>
+<div class="login-wrapper">
+    <div class="login-left">
+        <div class="brand-logo"><i class="fas fa-tshirt"></i></div>
+        <div class="brand-title">SmartWash Pro</div>
+        <div class="brand-subtitle">Professional Laundry Management System<br>by Suresh Gopi</div>
+        <div class="features-list">
+            <div class="feature-item"><i class="fas fa-chart-pie"></i>Real-time Dashboard Analytics</div>
+            <div class="feature-item"><i class="fas fa-barcode"></i>Barcode Order Tracking</div>
+            <div class="feature-item"><i class="fas fa-file-pdf"></i>Auto PDF Invoice Generation</div>
+            <div class="feature-item"><i class="fab fa-whatsapp"></i>WhatsApp Notifications</div>
+            <div class="feature-item"><i class="fas fa-chart-line"></i>Business Reports & Analytics</div>
+        </div>
+    </div>
+    <div class="login-right">
+        <div class="login-title">Welcome Back! 👋</div>
+        <div class="login-subtitle">Sign in to your SmartWash Pro account</div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }}"><i class="fas fa-exclamation-circle"></i>{{ msg }}</div>
+        {% endfor %}{% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user input-icon"></i>
+                    <input type="text" name="username" class="input-field" placeholder="Enter your username" required autocomplete="username">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" name="password" class="input-field" id="passwordField" placeholder="Enter your password" required autocomplete="current-password">
+                    <button type="button" class="input-toggle" onclick="togglePassword()">
+                        <i class="fas fa-eye" id="eyeIcon"></i>
+                    </button>
+                </div>
+            </div>
+            <button type="submit" class="btn-login">
+                <i class="fas fa-sign-in-alt"></i> Sign In to Dashboard
+            </button>
+        </form>
+        
+        <div class="credentials-hint">
+            <strong>Demo Credentials:</strong><br>
+            Admin: <code>sureshgopi</code> / <code>Admin@123</code><br>
+            Staff: <code>staff1</code> / <code>Admin@123</code>
+        </div>
+    </div>
+</div>
+<script>
+function togglePassword() {
+    const f = document.getElementById('passwordField');
+    const i = document.getElementById('eyeIcon');
+    if (f.type === 'password') { f.type = 'text'; i.className = 'fas fa-eye-slash'; }
+    else { f.type = 'password'; i.className = 'fas fa-eye'; }
+}
+</script>
+</body>
+</html>

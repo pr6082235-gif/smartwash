@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% block title %}Order {{ order.order_id }}{% endblock %}
+{% block breadcrumb %}Orders / {{ order.order_id }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Order: <span class="text-primary">{{ order.order_id }}</span></h1>
+        <span class="status-badge status-{{ order.status }} status-lg">{{ order.status.upper() }}</span>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('orders.download_pdf', order_id=order.order_id) }}" class="btn btn-outline">
+            <i class="fas fa-file-pdf"></i> Download Invoice
+        </a>
+        <button class="btn btn-success" onclick="sendWhatsApp('confirmation')">
+            <i class="fab fa-whatsapp"></i> WhatsApp
+        </button>
+        <a href="{{ url_for('orders.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="order-detail-grid">
+    <!-- Order Info -->
+    <div class="detail-card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-clipboard"></i> Order Information</h3>
+        </div>
+        <div class="detail-grid">
+            <div class="detail-item"><span class="detail-label">Order ID</span><span class="detail-value order-id">{{ order.order_id }}</span></div>
+            <div class="detail-item"><span class="detail-label">Service Type</span><span class="detail-value">{{ order.service_type.replace('_', ' ').title() }}</span></div>
+            <div class="detail-item"><span class="detail-label">Quantity</span><span class="detail-value">{{ order.dress_quantity }} pieces</span></div>
+            <div class="detail-item"><span class="detail-label">Priority</span><span class="detail-value"><span class="badge-priority-{{ order.priority }}">{{ order.priority.upper() }}</span></span></div>
+            <div class="detail-item"><span class="detail-label">Delivery Date</span><span class="detail-value">{{ order.delivery_date }}</span></div>
+            <div class="detail-item"><span class="detail-label">Created By</span><span class="detail-value">{{ order.staff_name }}</span></div>
+            <div class="detail-item"><span class="detail-label">Created At</span><span class="detail-value">{{ order.created_at.strftime('%d %b %Y, %I:%M %p') if order.created_at else '-' }}</span></div>
+            {% if order.notes %}
+            <div class="detail-item full"><span class="detail-label">Notes</span><span class="detail-value">{{ order.notes }}</span></div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Customer Info -->
+    <div class="detail-card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-user"></i> Customer Information</h3>
+            <a href="{{ url_for('customers.view_customer', customer_id=order.customer_id) }}" class="btn-link">View Profile</a>
+        </div>
+        <div class="customer-profile">
+            <div class="customer-avatar-lg">{{ order.customer_name[0] }}</div>
+            <div class="customer-detail-info">
+                <div class="c-name">{{ order.customer_name }}</div>
+                <div class="c-phone"><i class="fas fa-phone"></i> {{ order.phone }}</div>
+                {% if order.email %}<div class="c-email"><i class="fas fa-envelope"></i> {{ order.email }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Barcode -->
+    <div class="detail-card barcode-card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-barcode"></i> Order Barcode</h3>
+        </div>
+        <div class="barcode-display">
+            <div class="barcode-visual" id="barcodeContainer">
+                <svg id="barcodeSvg"></svg>
+            </div>
+            <div class="barcode-number">{{ order.barcode }}</div>
+            <div class="order-qr" id="qrCode"></div>
+        </div>
+    </div>
+
+    <!-- Payment Info -->
+    <div class="detail-card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-receipt"></i> Payment Details</h3>
+        </div>
+        <div class="payment-breakdown">
+            <div class="pay-row"><span>Base Amount</span><span>₹{{ "%.2f"|format(order.total_amount) }}</span></div>
+            <div class="pay-row"><span>GST (18%)</span><span>₹{{ "%.2f"|format(order.gst_amount) }}</span></div>
+            <div class="pay-row"><span>Discount</span><span>-₹{{ "%.2f"|format(order.discount) }}</span></div>
+            <div class="pay-row total"><span>Total Amount</span><span>₹{{ "%.2f"|format(order.final_amount) }}</span></div>
+        </div>
+        {% if payment %}
+        <div class="payment-status-box status-{{ payment.payment_status }}">
+            <i class="fas fa-{% if payment.payment_status == 'paid' %}check-circle{% else %}clock{% endif %}"></i>
+            {{ payment.payment_method.upper() }} • {{ payment.payment_status.upper() }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Order Items -->
+    {% if items %}
+    <div class="detail-card full-width">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-tags"></i> Order Items</h3>
+        </div>
+        <table class="data-table">
+            <thead><tr><th>Item</th><th>Service</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
+            <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.item_name }}</td>
+                <td>{{ item.service_type.replace('_', ' ').title() }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>₹{{ "%.2f"|format(item.unit_price) }}</td>
+                <td class="amount">₹{{ "%.2f"|format(item.total_price) }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Update Status -->
+    <div class="detail-card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-sync"></i> Update Status</h3>
+        </div>
+        <form method="POST" action="{{ url_for('orders.update_status', order_id=order.order_id) }}">
+            <div class="status-update-grid">
+                {% for st in ['pending', 'processing', 'ready', 'delivered', 'cancelled'] %}
+                <label class="status-option status-opt-{{ st }} {% if order.status == st %}selected{% endif %}">
+                    <input type="radio" name="status" value="{{ st }}" {% if order.status == st %}checked{% endif %}>
+                    <span>{{ st.upper() }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top:16px;width:100%;">
+                <i class="fas fa-save"></i> Update Status
+            </button>
+        </form>
+        
+        {% if session.role == 'admin' %}
+        <form method="POST" action="{{ url_for('orders.delete_order', order_id=order.order_id) }}" 
+              onsubmit="return confirm('Delete this order? This cannot be undone.')">
+            <button type="submit" class="btn btn-danger" style="margin-top:8px;width:100%;">
+                <i class="fas fa-trash"></i> Delete Order
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- WhatsApp Actions -->
+    <div class="detail-card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fab fa-whatsapp" style="color:#25D366"></i> WhatsApp Notifications</h3>
+            {% if order.whatsapp_sent %}<span class="badge badge-success">Sent</span>{% endif %}
+        </div>
+        <div class="whatsapp-actions">
+            <button class="btn whatsapp-btn" onclick="sendWhatsApp('confirmation')">
+                <i class="fab fa-whatsapp"></i> Send Confirmation
+            </button>
+            <button class="btn whatsapp-btn" onclick="sendWhatsApp('ready')">
+                <i class="fab fa-whatsapp"></i> Send Ready Alert
+            </button>
+            <button class="btn whatsapp-btn" onclick="sendWhatsApp('invoice')">
+                <i class="fab fa-whatsapp"></i> Send Invoice Link
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+<script>
+// Generate barcode
+JsBarcode("#barcodeSvg", "{{ order.barcode }}", {
+    format: "CODE128", width: 2, height: 60, displayValue: false,
+    background: "transparent", lineColor: "#1E293B"
+});
+
+// Generate QR
+new QRCode(document.getElementById("qrCode"), {
+    text: "SmartWash:{{ order.order_id }}:{{ order.customer_name }}",
+    width: 80, height: 80,
+    colorDark: "#2563EB", colorLight: "#ffffff"
+});
+
+function sendWhatsApp(type) {
+    fetch(`/api/send-whatsapp/{{ order.order_id }}`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({type: type})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.open(data.whatsapp_url, '_blank');
+            showToast('WhatsApp message ready!', 'success');
+        }
+    })
+    .catch(() => showToast('Error sending message', 'danger'));
+}
+</script>
+{% endblock %}

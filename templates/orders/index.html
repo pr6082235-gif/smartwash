@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}All Orders{% endblock %}
+{% block breadcrumb %}Orders{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">All Orders</h1>
+        <p class="page-subtitle">{{ total }} total orders</p>
+    </div>
+    <a href="{{ url_for('orders.new_order') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> New Order
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar">
+    <form method="GET" class="filter-form">
+        <div class="filter-tabs">
+            {% for s in ['all', 'pending', 'processing', 'ready', 'delivered', 'cancelled'] %}
+            <a href="?status={{ s }}&search={{ search }}" 
+               class="filter-tab {% if status_filter == s %}active{% endif %}">
+                {{ s.title() }}
+            </a>
+            {% endfor %}
+        </div>
+        <div class="filter-search">
+            <input type="hidden" name="status" value="{{ status_filter }}">
+            <i class="fas fa-search"></i>
+            <input type="text" name="search" value="{{ search }}" placeholder="Search by name, phone, order ID...">
+            <button type="submit" class="btn btn-sm btn-primary">Search</button>
+        </div>
+    </form>
+</div>
+
+<!-- Orders Table -->
+<div class="data-card">
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Service</th>
+                    <th>Qty</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Delivery</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for order in orders %}
+            <tr>
+                <td><span class="order-id">{{ order.order_id }}</span></td>
+                <td>
+                    <div class="customer-cell">
+                        <div class="customer-avatar">{{ order.customer_name[0] }}</div>
+                        <div>
+                            <div class="customer-name">{{ order.customer_name }}</div>
+                            <div class="customer-phone">{{ order.phone }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td><span class="service-badge">{{ order.service_type.replace('_', ' ').title() }}</span></td>
+                <td>{{ order.dress_quantity }} pcs</td>
+                <td class="amount">₹{{ "%.2f"|format(order.final_amount) }}</td>
+                <td><span class="status-badge status-{{ order.status }}">{{ order.status }}</span></td>
+                <td class="date-cell">{{ order.delivery_date }}</td>
+                <td>
+                    <div class="action-btns">
+                        <a href="{{ url_for('orders.view_order', order_id=order.order_id) }}" 
+                           class="btn-icon" title="View"><i class="fas fa-eye"></i></a>
+                        <a href="{{ url_for('orders.download_pdf', order_id=order.order_id) }}" 
+                           class="btn-icon" title="Download PDF"><i class="fas fa-file-pdf"></i></a>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" class="empty-state">
+                <i class="fas fa-box-open"></i>
+                <p>No orders found. <a href="{{ url_for('orders.new_order') }}">Create your first order!</a></p>
+            </td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="?status={{ status_filter }}&search={{ search }}&page={{ page-1 }}" class="page-btn"><i class="fas fa-chevron-left"></i></a>
+        {% endif %}
+        {% for p in range(1, total_pages+1) %}
+        <a href="?status={{ status_filter }}&search={{ search }}&page={{ p }}" 
+           class="page-btn {% if p == page %}active{% endif %}">{{ p }}</a>
+        {% endfor %}
+        {% if page < total_pages %}
+        <a href="?status={{ status_filter }}&search={{ search }}&page={{ page+1 }}" class="page-btn"><i class="fas fa-chevron-right"></i></a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

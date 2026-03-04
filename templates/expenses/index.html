@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}Expenses{% endblock %}
+{% block breadcrumb %}Expenses{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Expense Tracking</h1>
+        <p class="page-subtitle">Track your business expenses</p>
+    </div>
+    <button class="btn btn-primary" onclick="toggleAddForm()">
+        <i class="fas fa-plus"></i> Add Expense
+    </button>
+</div>
+
+<!-- Add Expense Form -->
+<div id="addExpenseForm" style="display:none;" class="data-card" style="margin-bottom:20px;">
+    <div class="card-header"><h3 class="card-title">Add New Expense</h3></div>
+    <form method="POST" action="{{ url_for('expenses.index') }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label required">Title</label>
+                <input type="text" name="title" class="form-input" placeholder="Expense title" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label required">Category</label>
+                <select name="category" class="form-input" required>
+                    <option value="">Select Category</option>
+                    <option value="utilities">Utilities</option>
+                    <option value="supplies">Supplies</option>
+                    <option value="salary">Salary</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="rent">Rent</option>
+                    <option value="marketing">Marketing</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label required">Amount (₹)</label>
+                <input type="number" name="amount" class="form-input" placeholder="0.00" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label required">Date</label>
+                <input type="date" name="expense_date" class="form-input" required value="{{ now().strftime('%Y-%m-%d') if now else '' }}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-input" rows="2" placeholder="Additional details..."></textarea>
+        </div>
+        <div class="form-actions" style="margin-top:10px;">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Add Expense</button>
+            <button type="button" class="btn btn-secondary" onclick="toggleAddForm()">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<!-- Summary Cards -->
+<div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+    <div class="stat-card warning">
+        <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">₹{{ "%.0f"|format(monthly_total) }}</div>
+            <div class="stat-label">This Month's Expenses</div>
+        </div>
+    </div>
+    {% for cat in by_category[:2] %}
+    <div class="stat-card info">
+        <div class="stat-icon"><i class="fas fa-tag"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">₹{{ "%.0f"|format(cat.total) }}</div>
+            <div class="stat-label">{{ cat.category.title() }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Expenses Table -->
+<div class="data-card">
+    <div class="card-header"><h3 class="card-title">Recent Expenses</h3></div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead><tr><th>Title</th><th>Category</th><th>Amount</th><th>Date</th><th>Added By</th><th>Description</th></tr></thead>
+            <tbody>
+            {% for expense in expenses %}
+            <tr>
+                <td><strong>{{ expense.title }}</strong></td>
+                <td><span class="service-badge">{{ expense.category.title() }}</span></td>
+                <td class="amount">₹{{ "%.2f"|format(expense.amount) }}</td>
+                <td class="date-cell">{{ expense.expense_date }}</td>
+                <td>{{ expense.added_by_name }}</td>
+                <td style="color:#64748b;font-size:13px;">{{ expense.description or '-' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="empty-state">No expenses recorded yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleAddForm() {
+    const form = document.getElementById('addExpenseForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+// Set default date
+document.querySelector('input[name="expense_date"]').value = new Date().toISOString().split('T')[0];
+</script>
+{% endblock %}

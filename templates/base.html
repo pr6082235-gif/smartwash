@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SmartWash Pro{% endblock %} | SmartWash Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-tshirt"></i></div>
+                <div class="logo-text">
+                    <span class="brand-name">SmartWash</span>
+                    <span class="brand-sub">PRO</span>
+                </div>
+            </div>
+            <button class="sidebar-toggle-btn" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-user">
+            <div class="user-avatar">{{ session.full_name[0] | upper }}</div>
+            <div class="user-info">
+                <span class="user-name">{{ session.full_name }}</span>
+                <span class="user-role badge-{{ session.role }}">{{ session.role | title }}</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">Main Menu</div>
+            <a href="{{ url_for('dashboard.index') }}" class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                <i class="fas fa-chart-pie"></i><span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('orders.new_order') }}" class="nav-item {% if request.endpoint == 'orders.new_order' %}active{% endif %}">
+                <i class="fas fa-plus-circle"></i><span>New Order</span>
+                <span class="nav-badge new">New</span>
+            </a>
+            <a href="{{ url_for('orders.index') }}" class="nav-item {% if request.endpoint == 'orders.index' %}active{% endif %}">
+                <i class="fas fa-list-alt"></i><span>All Orders</span>
+            </a>
+            <a href="{{ url_for('customers.index') }}" class="nav-item {% if request.endpoint and 'customers' in request.endpoint %}active{% endif %}">
+                <i class="fas fa-users"></i><span>Customers</span>
+            </a>
+            
+            <div class="nav-section-title">Business</div>
+            <a href="{{ url_for('reports.index') }}" class="nav-item {% if request.endpoint and 'reports' in request.endpoint %}active{% endif %}">
+                <i class="fas fa-chart-bar"></i><span>Reports</span>
+            </a>
+            <a href="{{ url_for('expenses.index') }}" class="nav-item {% if request.endpoint and 'expenses' in request.endpoint %}active{% endif %}">
+                <i class="fas fa-wallet"></i><span>Expenses</span>
+            </a>
+            
+            <div class="nav-section-title">Quick Actions</div>
+            <a href="#" class="nav-item" id="scanBarcodeNav" data-bs-toggle="modal" data-bs-target="#scanModal" onclick="openScanModal()">
+                <i class="fas fa-barcode"></i><span>Scan Order</span>
+            </a>
+            
+            {% if session.role == 'admin' %}
+            <div class="nav-section-title">Admin</div>
+            <a href="#" class="nav-item">
+                <i class="fas fa-cogs"></i><span>Settings</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-users-cog"></i><span>Staff Mgmt</span>
+            </a>
+            {% endif %}
+        </nav>
+        
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Top Navbar -->
+        <header class="top-navbar">
+            <div class="navbar-left">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="breadcrumb">
+                    <i class="fas fa-home"></i>
+                    <span>{% block breadcrumb %}Dashboard{% endblock %}</span>
+                </div>
+            </div>
+            <div class="navbar-right">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search orders, customers..." id="globalSearch">
+                </div>
+                <button class="icon-btn" id="darkModeToggle" title="Toggle Dark Mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="icon-btn" onclick="openScanModal()" title="Scan Barcode">
+                    <i class="fas fa-qrcode"></i>
+                </button>
+                <div class="notifications">
+                    <button class="icon-btn" id="notifBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notif-dot"></span>
+                    </button>
+                </div>
+                <div class="user-menu">
+                    <div class="user-avatar-sm">{{ session.full_name[0] | upper }}</div>
+                    <span class="user-name-sm">{{ session.full_name }}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                {{ message }}
+                <button class="alert-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Page Content -->
+        <div class="page-content">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Barcode Scanner Modal -->
+    <div class="modal-overlay" id="scanModal" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fas fa-barcode"></i> Scan Order Barcode</h3>
+                <button class="modal-close" onclick="closeScanModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="scan-area" id="scanArea">
+                    <div class="scan-placeholder">
+                        <i class="fas fa-camera"></i>
+                        <p>Camera feed will appear here</p>
+                    </div>
+                    <div id="reader" style="width:100%"></div>
+                </div>
+                <div class="scan-manual">
+                    <p style="text-align:center;color:#64748b;margin:10px 0">— OR ENTER MANUALLY —</p>
+                    <div class="input-group">
+                        <input type="text" id="manualBarcode" class="form-input" placeholder="Enter Order ID or Barcode">
+                        <button class="btn btn-primary" onclick="fetchByBarcode()">
+                            <i class="fas fa-search"></i> Find
+                        </button>
+                    </div>
+                </div>
+                <div id="scanResult" class="scan-result" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

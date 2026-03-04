@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Welcome back, {{ session.full_name }}! Here's your business overview.</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('orders.new_order') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Order
+        </a>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card primary">
+        <div class="stat-icon"><i class="fas fa-shopping-bag"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.today_orders }}</div>
+            <div class="stat-label">Today's Orders</div>
+            <div class="stat-trend up"><i class="fas fa-arrow-up"></i> Active today</div>
+        </div>
+    </div>
+    <div class="stat-card warning">
+        <div class="stat-icon"><i class="fas fa-clock"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.pending_orders }}</div>
+            <div class="stat-label">Pending Orders</div>
+            <div class="stat-trend warning"><i class="fas fa-exclamation"></i> Needs attention</div>
+        </div>
+    </div>
+    <div class="stat-card success">
+        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.completed_orders }}</div>
+            <div class="stat-label">Completed Orders</div>
+            <div class="stat-trend up"><i class="fas fa-arrow-up"></i> All time</div>
+        </div>
+    </div>
+    <div class="stat-card accent">
+        <div class="stat-icon"><i class="fas fa-rupee-sign"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">₹{{ "%.0f"|format(stats.today_revenue) }}</div>
+            <div class="stat-label">Today's Revenue</div>
+            <div class="stat-trend up"><i class="fas fa-arrow-up"></i> Collected</div>
+        </div>
+    </div>
+    <div class="stat-card info">
+        <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">₹{{ "%.0f"|format(stats.monthly_revenue) }}</div>
+            <div class="stat-label">Monthly Revenue</div>
+            <div class="stat-trend up"><i class="fas fa-chart-line"></i> This month</div>
+        </div>
+    </div>
+    <div class="stat-card purple">
+        <div class="stat-icon"><i class="fas fa-users"></i></div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.total_customers }}</div>
+            <div class="stat-label">Total Customers</div>
+            <div class="stat-trend up"><i class="fas fa-user-plus"></i> Registered</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="charts-row">
+    <div class="chart-card large">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-chart-line"></i> Revenue Overview</h3>
+            <div class="card-actions">
+                <span class="badge badge-primary">Last 6 Months</span>
+            </div>
+        </div>
+        <canvas id="revenueChart" height="120"></canvas>
+    </div>
+    <div class="chart-card small">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-chart-donut"></i> Order Status</h3>
+        </div>
+        <canvas id="statusChart" height="180"></canvas>
+        <div class="chart-legend" id="statusLegend"></div>
+    </div>
+</div>
+
+<!-- Recent Orders & Activity -->
+<div class="two-col-row">
+    <div class="data-card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-list"></i> Recent Orders</h3>
+            <a href="{{ url_for('orders.index') }}" class="btn-link">View All</a>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Service</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for order in recent_orders %}
+                <tr onclick="window.location='{{ url_for('orders.view_order', order_id=order.order_id) }}'" style="cursor:pointer;">
+                    <td><span class="order-id">{{ order.order_id }}</span></td>
+                    <td>
+                        <div class="customer-cell">
+                            <div class="customer-avatar">{{ order.customer_name[0] }}</div>
+                            <div>
+                                <div class="customer-name">{{ order.customer_name }}</div>
+                                <div class="customer-phone">{{ order.phone }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="service-badge">{{ order.service_type.replace('_', ' ').title() }}</span></td>
+                    <td class="amount">₹{{ "%.2f"|format(order.final_amount) }}</td>
+                    <td><span class="status-badge status-{{ order.status }}">{{ order.status }}</span></td>
+                    <td class="date-cell">{{ order.created_at.strftime('%d %b') if order.created_at else '-' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="empty-state">No orders yet. <a href="{{ url_for('orders.new_order') }}">Create one!</a></td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="side-cards">
+        <div class="data-card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-bolt"></i> Quick Actions</h3>
+            </div>
+            <div class="quick-actions">
+                <a href="{{ url_for('orders.new_order') }}" class="quick-btn primary">
+                    <i class="fas fa-plus-circle"></i>New Order
+                </a>
+                <a href="{{ url_for('orders.index') }}?status=pending" class="quick-btn warning">
+                    <i class="fas fa-clock"></i>Pending Orders
+                </a>
+                <a href="{{ url_for('orders.index') }}?status=ready" class="quick-btn success">
+                    <i class="fas fa-check"></i>Ready Orders
+                </a>
+                <button class="quick-btn info" onclick="openScanModal()">
+                    <i class="fas fa-barcode"></i>Scan Barcode
+                </button>
+                <a href="{{ url_for('reports.index') }}" class="quick-btn accent">
+                    <i class="fas fa-chart-bar"></i>View Reports
+                </a>
+                <a href="{{ url_for('customers.index') }}" class="quick-btn purple">
+                    <i class="fas fa-users"></i>Customers
+                </a>
+            </div>
+        </div>
+
+        <div class="data-card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-history"></i> Recent Activity</h3>
+            </div>
+            <div class="activity-list">
+                {% for log in activity_logs[:6] %}
+                <div class="activity-item">
+                    <div class="activity-icon"><i class="fas fa-circle-dot"></i></div>
+                    <div class="activity-content">
+                        <div class="activity-action">{{ log.action.replace('_', ' ').title() }}</div>
+                        <div class="activity-meta">{{ log.full_name or 'System' }} • {{ log.created_at.strftime('%I:%M %p') if log.created_at else '' }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <p class="empty-state">No recent activity.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Revenue Chart
+const chartData = {{ chart_data | tojson }};
+const months = chartData.map(d => d.month);
+const revenues = chartData.map(d => parseFloat(d.total));
+
+const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+const gradient = revenueCtx.createLinearGradient(0, 0, 0, 300);
+gradient.addColorStop(0, 'rgba(37,99,235,0.3)');
+gradient.addColorStop(1, 'rgba(37,99,235,0.0)');
+
+new Chart(revenueCtx, {
+    type: 'line',
+    data: {
+        labels: months.length ? months : ['No Data'],
+        datasets: [{
+            label: 'Revenue (₹)',
+            data: revenues.length ? revenues : [0],
+            borderColor: '#2563EB',
+            backgroundColor: gradient,
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#2563EB',
+            pointRadius: 5,
+            pointHoverRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => '₹' + ctx.raw.toLocaleString('en-IN') } } },
+        scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + v.toLocaleString('en-IN'), font: {size:11} }, grid: { color:'rgba(0,0,0,0.05)' } }, x: { grid: { display:false } } }
+    }
+});
+
+// Status Donut Chart
+const statusData = {{ status_data | tojson }};
+const statusColors = { pending:'#F59E0B', processing:'#3B82F6', ready:'#10B981', delivered:'#22C55E', cancelled:'#EF4444' };
+
+if (statusData.length) {
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: statusData.map(d => d.status.charAt(0).toUpperCase() + d.status.slice(1)),
+            datasets: [{ data: statusData.map(d => d.count), backgroundColor: statusData.map(d => statusColors[d.status] || '#94A3B8'), borderWidth: 0 }]
+        },
+        options: { responsive:true, cutout:'72%', plugins:{ legend:{display:false} } }
+    });
+    
+    const legend = document.getElementById('statusLegend');
+    statusData.forEach(d => {
+        legend.innerHTML += `<div class="legend-item"><span style="background:${statusColors[d.status]||'#94A3B8'}"></span>${d.status} (${d.count})</div>`;
+    });
+}
+</script>
+{% endblock %}

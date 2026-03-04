@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}{{ customer.name }}{% endblock %}
+{% block breadcrumb %}Customers / {{ customer.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ customer.name }}</h1>
+        <p class="page-subtitle">Customer Profile</p>
+    </div>
+    <a href="{{ url_for('customers.index') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+<div class="order-detail-grid">
+    <div class="detail-card">
+        <div class="card-header"><h3 class="card-title"><i class="fas fa-user"></i> Profile</h3></div>
+        <div class="customer-profile">
+            <div class="customer-avatar-lg">{{ customer.name[0] }}</div>
+            <div class="customer-detail-info">
+                <div class="c-name">{{ customer.name }}</div>
+                <div class="c-phone"><i class="fas fa-phone"></i> {{ customer.phone }}</div>
+                {% if customer.email %}<div class="c-email"><i class="fas fa-envelope"></i> {{ customer.email }}</div>{% endif %}
+                {% if customer.address %}<div class="c-email"><i class="fas fa-map-marker-alt"></i> {{ customer.address }}</div>{% endif %}
+                <div style="margin-top:12px;display:flex;gap:10px;">
+                    <div class="stat-mini"><span class="stat-mini-val">{{ customer.total_visits }}</span><span class="stat-mini-label">Visits</span></div>
+                    <div class="stat-mini accent"><span class="stat-mini-val">₹{{ "%.0f"|format(customer.total_spent) }}</span><span class="stat-mini-label">Spent</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="detail-card full-width">
+        <div class="card-header"><h3 class="card-title"><i class="fas fa-history"></i> Order History</h3></div>
+        <table class="data-table">
+            <thead><tr><th>Order ID</th><th>Service</th><th>Qty</th><th>Amount</th><th>Status</th><th>Payment</th><th>Date</th></tr></thead>
+            <tbody>
+            {% for order in orders %}
+            <tr onclick="window.location='{{ url_for('orders.view_order', order_id=order.order_id) }}'" style="cursor:pointer;">
+                <td><span class="order-id">{{ order.order_id }}</span></td>
+                <td>{{ order.service_type.replace('_', ' ').title() }}</td>
+                <td>{{ order.dress_quantity }}</td>
+                <td class="amount">₹{{ "%.2f"|format(order.final_amount) }}</td>
+                <td><span class="status-badge status-{{ order.status }}">{{ order.status }}</span></td>
+                <td><span class="status-badge status-{{ order.payment_status or 'pending' }}">{{ (order.payment_status or 'pending').upper() }}</span></td>
+                <td class="date-cell">{{ order.created_at.strftime('%d %b %Y') if order.created_at else '-' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="empty-state">No orders yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
