@@ -7,7 +7,7 @@ PyMySQL==1.1.0
 mysql-connector-python==8.3.0
 reportlab==4.1.0
 qrcode==7.4.2
-Pillow==9.5.0
+Pillow
 python-barcode==0.15.1
 requests==2.31.0
 python-dotenv==1.0.0
